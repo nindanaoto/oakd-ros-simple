@@ -18,6 +18,7 @@
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/CompressedImage.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <oakd_ros/bboxes.h>
 
 ///// image processing
@@ -60,6 +61,7 @@ class oakd_ros_class{
     string path;
 
     sensor_msgs::Image l_img_msg, r_img_msg, rgb_img_msg, depth_img_msg, nn_img_msg;
+    sensor_msgs::CameraInfo l_info, r_info;
     sensor_msgs::CompressedImage l_img_comp_msg, r_img_comp_msg, rgb_img_comp_msg, nn_img_comp_msg;
 
     bool initialized=false;
@@ -78,7 +80,7 @@ class oakd_ros_class{
 
     ///// ros and tf
     ros::NodeHandle nh;
-    ros::Publisher imu_pub, l_pub, l_comp_pub, r_pub, r_comp_pub, rgb_pub, rgb_comp_pub, d_pub, pcl_pub, nn_pub, nn_comp_pub, nn_bbox_pub;
+    ros::Publisher imu_pub, l_pub, l_comp_pub, l_info_pub, r_pub, r_comp_pub, r_info_pub, rgb_pub, rgb_comp_pub, d_pub, pcl_pub, nn_pub, nn_comp_pub, nn_bbox_pub;
     void main_initialize();
 
 
@@ -133,6 +135,8 @@ class oakd_ros_class{
           l_comp_pub = nh.advertise<sensor_msgs::CompressedImage>(topic_prefix+"/stereo_ir/left/image_raw/compressed", 10);
           r_comp_pub = nh.advertise<sensor_msgs::CompressedImage>(topic_prefix+"/stereo_ir/right/image_raw/compressed", 10);
         }
+        l_info_pub = nh.advertise<sensor_msgs::CameraInfo>(topic_prefix+"/stereo_ir/left/camerainfo", 10);
+        r_info_pub = nh.advertise<sensor_msgs::CameraInfo>(topic_prefix+"/stereo_ir/right/camearinfo", 10);
       }
       if (get_stereo_depth)
         d_pub = nh.advertise<sensor_msgs::Image>(topic_prefix+"/depth/image_raw", 10);
@@ -266,12 +270,12 @@ void oakd_ros_class::main_initialize(){
     xoutLeft->setStreamName("left");
     xoutRight->setStreamName("right");
 
-    // monoLeft->setResolution(dai::MonoCameraProperties::SensorResolution::THE_480_P);
-    monoLeft->setResolution(dai::MonoCameraProperties::SensorResolution::THE_400_P);
+    monoLeft->setResolution(dai::MonoCameraProperties::SensorResolution::THE_720_P);
+    // monoLeft->setResolution(dai::MonoCameraProperties::SensorResolution::THE_400_P);
     monoLeft->setBoardSocket(dai::CameraBoardSocket::LEFT);
     monoLeft->setFps(fps_stereo_depth);
-    // monoRight->setResolution(dai::MonoCameraProperties::SensorResolution::THE_480_P);
-    monoRight->setResolution(dai::MonoCameraProperties::SensorResolution::THE_400_P);
+    monoRight->setResolution(dai::MonoCameraProperties::SensorResolution::THE_720_P);
+    // monoRight->setResolution(dai::MonoCameraProperties::SensorResolution::THE_400_P);
     monoRight->setBoardSocket(dai::CameraBoardSocket::RIGHT);
     monoRight->setFps(fps_stereo_depth);
 

@@ -43,14 +43,24 @@ int main(int argc, char **argv)
         if (inPassIMU != nullptr){
           for (int i = 0; i < inPassIMU->packets.size(); ++i)
           {
+            const dai::IMUPacket imuPackets = inPassIMU->packets[i];
+            const dai::IMUReportAccelerometer accelVal = imuPackets.acceleroMeter;
+            const dai::IMUReportGyroscope gyro_val = imuPackets.gyroscope;
+            const dai::IMUReportRotationVectorWAcc rotation_val = imuPackets.rotationVector;
+
+            const auto acceleroTs = accelVal.timestamp.get();
+            const auto gyroTs = gyro_val.timestamp.get();
+            const auto tstamp = acceleroTs < gyroTs ? gyroTs : acceleroTs;
+
             sensor_msgs::Imu imu_msg;
             imu_msg.header.frame_id = oak_handler.topic_prefix+"_frame";
             imu_msg.header.stamp = ros::Time::now();
-            dai::IMUPacket imuPackets = inPassIMU->packets[i];
-            
-            dai::IMUReportAccelerometer accelVal = imuPackets.acceleroMeter;
-            dai::IMUReportGyroscope gyro_val = imuPackets.gyroscope;
-            dai::IMUReportRotationVectorWAcc rotation_val = imuPackets.rotationVector;
+            auto rosNow = ros::Time::now();
+            const auto steadyTime = std::chrono::steady_clock::now();
+            const auto diffTime = steadyTime - tstamp;
+            const long int nsec = rosNow.toNSec() - diffTime.count();
+            const auto rosStamp = rosNow.fromNSec(nsec);
+            imu_msg.header.stamp = rosStamp;
 
             imu_msg.linear_acceleration.x = accelVal.x; imu_msg.linear_acceleration.y = accelVal.y; imu_msg.linear_acceleration.z = accelVal.z;
           
@@ -152,13 +162,25 @@ int main(int argc, char **argv)
   if (oak_handler.get_stereo_ir){
     std::shared_ptr<dai::DataOutputQueue> leftQueue = device.getOutputQueue("left", 8, false);
     std::shared_ptr<dai::DataOutputQueue> rightQueue = device.getOutputQueue("right", 8, false);
+
+    const dai::Point2f topLeftPixelId();
+    const dai::Point2f bottomRightPixelId();
+
     stereo_thread = std::thread([&]() {
-      std_msgs::Header header;
       while(ros::ok()){
         std::shared_ptr<dai::ImgFrame> inPassLeft = leftQueue->tryGet<dai::ImgFrame>();
         std::shared_ptr<dai::ImgFrame> inPassRight = rightQueue->tryGet<dai::ImgFrame>();
-        header.stamp = ros::Time::now();
         if (inPassLeft != nullptr){
+          const auto tstamp = inPassLeft->getTimestamp();
+          std_msgs::Header header;
+          auto rosNow = ::ros::Time::now();
+          const auto steadyTime = std::chrono::steady_clock::now();
+          const auto diffTime = steadyTime - tstamp;
+          long int nsec = rosNow.toNSec() - diffTime.count();
+          const auto rosStamp = rosNow.fromNSec(nsec);
+          header.stamp = rosStamp;
+          header.seq = inPassLeft->getSequenceNum();
+
           FrameLeft = inPassLeft->getFrame();
           cv_bridge::CvImage bridge_left = cv_bridge::CvImage(header, sensor_msgs::image_encodings::MONO8, FrameLeft);
           if (oak_handler.get_raw){
@@ -169,8 +191,82 @@ int main(int argc, char **argv)
             bridge_left.toCompressedImageMsg(oak_handler.l_img_comp_msg);
             oak_handler.l_comp_pub.publish(oak_handler.l_img_comp_msg);
           }
+
+          // CameraInfo
+          const auto cameraId = dai::CameraBoardSocket::LEFT;
+          dai::CalibrationHandler calibHandler;
+          std::vector<std::vector<float>> camIntrinsics, rectifiedRotation;
+          std::vector<float> distCoeffs;
+          std::vector<double> flatIntrinsics, distCoeffsDouble;
+          int defWidth, defHeight;
+          std::tie(std::ignore, defWidth, defHeight) = calibHandler.getDefaultIntrinsics(cameraId);
+
+          oak_handler.l_info.width = static_cast<uint32_t>(defWidth);
+          oak_handler.l_info.height = static_cast<uint32_t>(defHeight);
+
+          camIntrinsics = calibHandler.getCameraIntrinsics(cameraId, oak_handler.l_info.width, oak_handler.l_info.height, topLeftPixelId, bottomRightPixelId);
+
+          flatIntrinsics.resize(9);
+          for(int i = 0; i < 3; i++) {
+              std::copy(camIntrinsics[i].begin(), camIntrinsics[i].end(), flatIntrinsics.begin() + 3 * i);
+          }
+
+          auto& intrinsics = oak_handler.l_info.K;
+          auto& distortions = oak_handler.l_info.D;
+          auto& projection = oak_handler.l_info.P;
+          auto& rotation = oak_handler.l_info.R;
+
+          std::copy(flatIntrinsics.begin(), flatIntrinsics.end(), intrinsics.begin());
+
+          distCoeffs = calibHandler.getDistortionCoefficients(cameraId);
+
+          for(size_t i = 0; i < 8; i++) {
+              distortions.push_back(static_cast<double>(distCoeffs[i]));
+          }
+
+          // Setting Projection matrix if the cameras are stereo pair. Right as the first and left as the second.
+          if(calibHandler.getStereoRightCameraId() != dai::CameraBoardSocket::AUTO && calibHandler.getStereoLeftCameraId() != dai::CameraBoardSocket::AUTO) {
+              if(calibHandler.getStereoRightCameraId() == cameraId || calibHandler.getStereoLeftCameraId() == cameraId) {
+                  std::vector<std::vector<float>> stereoIntrinsics = calibHandler.getCameraIntrinsics(
+                      calibHandler.getStereoRightCameraId(), oak_handler.l_info.width, oak_handler.l_info.height, topLeftPixelId, bottomRightPixelId);
+                  std::vector<double> stereoFlatIntrinsics(12), flatRectifiedRotation(9);
+                  for(int i = 0; i < 3; i++) {
+                      std::copy(stereoIntrinsics[i].begin(), stereoIntrinsics[i].end(), stereoFlatIntrinsics.begin() + 4 * i);
+                      stereoFlatIntrinsics[(4 * i) + 3] = 0;
+                  }
+
+                  if(calibHandler.getStereoLeftCameraId() == cameraId) {
+                      // This defines where the first camera is w.r.t second camera coordinate system giving it a translation to place all the points in the first
+                      // camera to second camera by multiplying that translation vector using transformation function.
+                      stereoFlatIntrinsics[3] = stereoFlatIntrinsics[0]
+                                                * calibHandler.getCameraExtrinsics(calibHandler.getStereoRightCameraId(), calibHandler.getStereoLeftCameraId())[0][3]
+                                                / 100.0;  // Converting to meters
+                      rectifiedRotation = calibHandler.getStereoLeftRectificationRotation();
+                  } else {
+                      rectifiedRotation = calibHandler.getStereoRightRectificationRotation();
+                  }
+
+                  for(int i = 0; i < 3; i++) {
+                      std::copy(rectifiedRotation[i].begin(), rectifiedRotation[i].end(), flatRectifiedRotation.begin() + 3 * i);
+                  }
+
+                  std::copy(stereoFlatIntrinsics.begin(), stereoFlatIntrinsics.end(), projection.begin());
+                  std::copy(flatRectifiedRotation.begin(), flatRectifiedRotation.end(), rotation.begin());
+              }
+          }
+          oak_handler.l_info.distortion_model = "rational_polynomial";
+          oak_handler.l_info_pub.publish(oak_handler.l_info);
         }
         if (inPassRight != nullptr){
+          std_msgs::Header header;
+          const auto tstamp = inPassRight->getTimestamp();
+          auto rosNow = ::ros::Time::now();
+          const auto steadyTime = std::chrono::steady_clock::now();
+          const auto diffTime = steadyTime - tstamp;
+          const long int nsec = rosNow.toNSec() - diffTime.count();
+          const auto rosStamp = rosNow.fromNSec(nsec);
+          header.stamp = rosStamp;
+          header.seq = inPassRight->getSequenceNum();
           FrameRight = inPassRight->getFrame();
           cv_bridge::CvImage bridge_right = cv_bridge::CvImage(header, sensor_msgs::image_encodings::MONO8, FrameRight);
           if (oak_handler.get_raw){
@@ -181,6 +277,71 @@ int main(int argc, char **argv)
             bridge_right.toCompressedImageMsg(oak_handler.r_img_comp_msg);
             oak_handler.r_comp_pub.publish(oak_handler.r_img_comp_msg);
           }
+
+          // CameraInfo
+          const auto cameraId = dai::CameraBoardSocket::RIGHT;
+          dai::CalibrationHandler calibHandler;
+          std::vector<std::vector<float>> camIntrinsics, rectifiedRotation;
+          std::vector<float> distCoeffs;
+          std::vector<double> flatIntrinsics, distCoeffsDouble;
+          int defWidth, defHeight;
+          std::tie(std::ignore, defWidth, defHeight) = calibHandler.getDefaultIntrinsics(cameraId);
+
+          oak_handler.r_info.width = static_cast<uint32_t>(defWidth);
+          oak_handler.r_info.height = static_cast<uint32_t>(defHeight);
+
+          camIntrinsics = calibHandler.getCameraIntrinsics(cameraId, oak_handler.r_info.width, oak_handler.r_info.height, topLeftPixelId, bottomRightPixelId);
+
+          flatIntrinsics.resize(9);
+          for(int i = 0; i < 3; i++) {
+              std::copy(camIntrinsics[i].begin(), camIntrinsics[i].end(), flatIntrinsics.begin() + 3 * i);
+          }
+
+          auto& intrinsics = oak_handler.r_info.K;
+          auto& distortions = oak_handler.r_info.D;
+          auto& projection = oak_handler.r_info.P;
+          auto& rotation = oak_handler.r_info.R;
+
+          std::copy(flatIntrinsics.begin(), flatIntrinsics.end(), intrinsics.begin());
+
+          distCoeffs = calibHandler.getDistortionCoefficients(cameraId);
+
+          for(size_t i = 0; i < 8; i++) {
+              distortions.push_back(static_cast<double>(distCoeffs[i]));
+          }
+
+          // Setting Projection matrix if the cameras are stereo pair. Right as the first and left as the second.
+          if(calibHandler.getStereoRightCameraId() != dai::CameraBoardSocket::AUTO && calibHandler.getStereoLeftCameraId() != dai::CameraBoardSocket::AUTO) {
+              if(calibHandler.getStereoRightCameraId() == cameraId || calibHandler.getStereoLeftCameraId() == cameraId) {
+                  std::vector<std::vector<float>> stereoIntrinsics = calibHandler.getCameraIntrinsics(
+                      calibHandler.getStereoRightCameraId(), oak_handler.r_info.width, oak_handler.r_info.height, 1280, 720);
+                  std::vector<double> stereoFlatIntrinsics(12), flatRectifiedRotation(9);
+                  for(int i = 0; i < 3; i++) {
+                      std::copy(stereoIntrinsics[i].begin(), stereoIntrinsics[i].end(), stereoFlatIntrinsics.begin() + 4 * i);
+                      stereoFlatIntrinsics[(4 * i) + 3] = 0;
+                  }
+
+                  if(calibHandler.getStereoLeftCameraId() == cameraId) {
+                      // This defines where the first camera is w.r.t second camera coordinate system giving it a translation to place all the points in the first
+                      // camera to second camera by multiplying that translation vector using transformation function.
+                      stereoFlatIntrinsics[3] = stereoFlatIntrinsics[0]
+                                                * calibHandler.getCameraExtrinsics(calibHandler.getStereoRightCameraId(), calibHandler.getStereoLeftCameraId())[0][3]
+                                                / 100.0;  // Converting to meters
+                      rectifiedRotation = calibHandler.getStereoLeftRectificationRotation();
+                  } else {
+                      rectifiedRotation = calibHandler.getStereoRightRectificationRotation();
+                  }
+
+                  for(int i = 0; i < 3; i++) {
+                      std::copy(rectifiedRotation[i].begin(), rectifiedRotation[i].end(), flatRectifiedRotation.begin() + 3 * i);
+                  }
+
+                  std::copy(stereoFlatIntrinsics.begin(), stereoFlatIntrinsics.end(), projection.begin());
+                  std::copy(flatRectifiedRotation.begin(), flatRectifiedRotation.end(), rotation.begin());
+              }
+          }
+          oak_handler.r_info.distortion_model = "rational_polynomial";
+          oak_handler.r_info_pub.publish(oak_handler.r_info);
         }
         std::chrono::milliseconds dura(2);
         std::this_thread::sleep_for(dura);

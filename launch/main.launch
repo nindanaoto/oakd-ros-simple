@@ -7,32 +7,32 @@
   <param name="/fps_IMU" value="100"/> <!-- data rate, integer -->
 
   <!-- image type - getting raw and compressed both is possible -->
-  <param name="/get_raw" value="false"/> 
-  <param name="/get_compressed" value="true"/> 
+  <param name="/get_raw" value="true"/> 
+  <param name="/get_compressed" value="false"/> 
 
   <!-- use or not -->
   <param name="/get_imu" value="true"/> 
   <param name="/get_rgb" value="false"/> 
 
   <param name="/get_stereo_ir" value="true"/> 
-  <param name="/get_stereo_depth" value="true"/> 
-  <param name="/get_pointcloud" value="true"/>
+  <param name="/get_stereo_depth" value="false"/> 
+  <param name="/get_pointcloud" value="false"/>
 
   <!-- depth post processing -->
   <param name="/pcl_max_range" value="6.0"/> <!-- [m] further than this value will not be published -->
   <param name="/depth_confidence" value="175"/>  <!-- 0~255 -->
   <param name="/bilateral_sigma" value="3"/>  <!-- 0 ~ 65535, depth filter -->
-  <param name="/use_spatialFilter" value="true"/> 
+  <param name="/use_spatialFilter" value="false"/> 
       <param name="/spatialFilter_holefilling_radius" value="4"/> 
       <param name="/spatialFilter_iteration_num" value="1"/> 
       <param name="/spatialFilter_alpha" value="0.5"/> 
-  <param name="/use_temporalFilter" value="true"/> 
+  <param name="/use_temporalFilter" value="false"/> 
       <param name="/temporalFilter_alpha" value="0.4"/> 
-  <param name="/use_speckleFilter" value="true"/> 
+  <param name="/use_speckleFilter" value="false"/> 
       <param name="/speckleFilter_range" value="50"/> 
 
 <!-- setCoordinateSize, setAnchors, setAnchorMasks should be directly edited in main.h file -->
-  <param name="/get_YOLO" value="true"/>
+  <param name="/get_YOLO" value="false"/>
   <param name="/thread_num" value="1"/>  <!-- best is 2 -->
   <param name="/blob_file" value="/blob_files/tiny-yolo-v4.blob"/>
   <param name="/class_file" value="/blob_files/class.txt"/>
