@@ -163,9 +163,6 @@ int main(int argc, char **argv)
     std::shared_ptr<dai::DataOutputQueue> leftQueue = device.getOutputQueue("left", 8, false);
     std::shared_ptr<dai::DataOutputQueue> rightQueue = device.getOutputQueue("right", 8, false);
 
-    const dai::Point2f topLeftPixelId();
-    const dai::Point2f bottomRightPixelId();
-
     stereo_thread = std::thread([&]() {
       while(ros::ok()){
         std::shared_ptr<dai::ImgFrame> inPassLeft = leftQueue->tryGet<dai::ImgFrame>();
@@ -204,7 +201,7 @@ int main(int argc, char **argv)
           oak_handler.l_info.width = static_cast<uint32_t>(defWidth);
           oak_handler.l_info.height = static_cast<uint32_t>(defHeight);
 
-          camIntrinsics = calibHandler.getCameraIntrinsics(cameraId, oak_handler.l_info.width, oak_handler.l_info.height, topLeftPixelId, bottomRightPixelId);
+          camIntrinsics = calibHandler.getCameraIntrinsics(cameraId, oak_handler.l_info.width, oak_handler.l_info.height);
 
           flatIntrinsics.resize(9);
           for(int i = 0; i < 3; i++) {
@@ -228,7 +225,7 @@ int main(int argc, char **argv)
           if(calibHandler.getStereoRightCameraId() != dai::CameraBoardSocket::AUTO && calibHandler.getStereoLeftCameraId() != dai::CameraBoardSocket::AUTO) {
               if(calibHandler.getStereoRightCameraId() == cameraId || calibHandler.getStereoLeftCameraId() == cameraId) {
                   std::vector<std::vector<float>> stereoIntrinsics = calibHandler.getCameraIntrinsics(
-                      calibHandler.getStereoRightCameraId(), oak_handler.l_info.width, oak_handler.l_info.height, topLeftPixelId, bottomRightPixelId);
+                      calibHandler.getStereoRightCameraId(), oak_handler.l_info.width, oak_handler.l_info.height);
                   std::vector<double> stereoFlatIntrinsics(12), flatRectifiedRotation(9);
                   for(int i = 0; i < 3; i++) {
                       std::copy(stereoIntrinsics[i].begin(), stereoIntrinsics[i].end(), stereoFlatIntrinsics.begin() + 4 * i);
@@ -290,7 +287,7 @@ int main(int argc, char **argv)
           oak_handler.r_info.width = static_cast<uint32_t>(defWidth);
           oak_handler.r_info.height = static_cast<uint32_t>(defHeight);
 
-          camIntrinsics = calibHandler.getCameraIntrinsics(cameraId, oak_handler.r_info.width, oak_handler.r_info.height, topLeftPixelId, bottomRightPixelId);
+          camIntrinsics = calibHandler.getCameraIntrinsics(cameraId, oak_handler.r_info.width, oak_handler.r_info.height);
 
           flatIntrinsics.resize(9);
           for(int i = 0; i < 3; i++) {
@@ -314,7 +311,7 @@ int main(int argc, char **argv)
           if(calibHandler.getStereoRightCameraId() != dai::CameraBoardSocket::AUTO && calibHandler.getStereoLeftCameraId() != dai::CameraBoardSocket::AUTO) {
               if(calibHandler.getStereoRightCameraId() == cameraId || calibHandler.getStereoLeftCameraId() == cameraId) {
                   std::vector<std::vector<float>> stereoIntrinsics = calibHandler.getCameraIntrinsics(
-                      calibHandler.getStereoRightCameraId(), oak_handler.r_info.width, oak_handler.r_info.height, 1280, 720);
+                      calibHandler.getStereoRightCameraId(), oak_handler.r_info.width, oak_handler.r_info.height);
                   std::vector<double> stereoFlatIntrinsics(12), flatRectifiedRotation(9);
                   for(int i = 0; i < 3; i++) {
                       std::copy(stereoIntrinsics[i].begin(), stereoIntrinsics[i].end(), stereoFlatIntrinsics.begin() + 4 * i);

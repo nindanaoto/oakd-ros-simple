@@ -296,24 +296,24 @@ void oakd_ros_class::main_initialize(){
       // stereodepth->setRectifyEdgeFillColor(0); // black, to better see the cutout
       stereodepth->setExtendedDisparity(false);
       stereodepth->setSubpixel(true);
-      dai::RawStereoDepthConfig depth_config = stereodepth->initialConfig.get();
-      if (use_spatialFilter){
-        depth_config.postProcessing.spatialFilter.enable = true;
-        depth_config.postProcessing.spatialFilter.holeFillingRadius = spatialFilter_holefilling_radius;
-        depth_config.postProcessing.spatialFilter.numIterations = spatialFilter_iteration_num;
-        depth_config.postProcessing.spatialFilter.alpha = spatialFilter_alpha;
-      }
-      if (use_temporalFilter){
-        depth_config.postProcessing.temporalFilter.enable = true;
-        depth_config.postProcessing.temporalFilter.alpha = temporalFilter_alpha;
-        depth_config.postProcessing.temporalFilter.persistencyMode = dai::RawStereoDepthConfig::PostProcessing::TemporalFilter::PersistencyMode::VALID_2_IN_LAST_4;
-        // depth_config.postProcessing.temporalFilter.persistencyMode = dai::RawStereoDepthConfig::PostProcessing::TemporalFilter::PersistencyMode::VALID_8_OUT_OF_8;
-      }
-      if (use_speckleFilter){
-        depth_config.postProcessing.speckleFilter.enable = true;
-        depth_config.postProcessing.speckleFilter.speckleRange = speckleFilter_range;
-      }
-      stereodepth->initialConfig.set(depth_config);
+      // dai::RawStereoDepthConfig depth_config = stereodepth->initialConfig.get();
+      // if (use_spatialFilter){
+      //   depth_config.postProcessing.spatialFilter.enable = true;
+      //   depth_config.postProcessing.spatialFilter.holeFillingRadius = spatialFilter_holefilling_radius;
+      //   depth_config.postProcessing.spatialFilter.numIterations = spatialFilter_iteration_num;
+      //   depth_config.postProcessing.spatialFilter.alpha = spatialFilter_alpha;
+      // }
+      // if (use_temporalFilter){
+      //   depth_config.postProcessing.temporalFilter.enable = true;
+      //   depth_config.postProcessing.temporalFilter.alpha = temporalFilter_alpha;
+      //   depth_config.postProcessing.temporalFilter.persistencyMode = dai::RawStereoDepthConfig::PostProcessing::TemporalFilter::PersistencyMode::VALID_2_IN_LAST_4;
+      //   // depth_config.postProcessing.temporalFilter.persistencyMode = dai::RawStereoDepthConfig::PostProcessing::TemporalFilter::PersistencyMode::VALID_8_OUT_OF_8;
+      // }
+      // if (use_speckleFilter){
+      //   depth_config.postProcessing.speckleFilter.enable = true;
+      //   depth_config.postProcessing.speckleFilter.speckleRange = speckleFilter_range;
+      // }
+      // stereodepth->initialConfig.set(depth_config);
 
       monoLeft->out.link(stereodepth->left);
       monoRight->out.link(stereodepth->right);
@@ -337,12 +337,12 @@ void oakd_ros_class::main_initialize(){
     std::shared_ptr<dai::node::XLinkOut> xoutDepth      = pipeline.create<dai::node::XLinkOut>();
     xoutDepth->setStreamName("depth");
 
-    // monoLeft->setResolution(dai::MonoCameraProperties::SensorResolution::THE_480_P);
-    monoLeft->setResolution(dai::MonoCameraProperties::SensorResolution::THE_400_P);
+    monoLeft->setResolution(dai::MonoCameraProperties::SensorResolution::THE_720_P);
+    // monoLeft->setResolution(dai::MonoCameraProperties::SensorResolution::THE_400_P);
     monoLeft->setBoardSocket(dai::CameraBoardSocket::LEFT);
     monoLeft->setFps(fps_stereo_depth);
-    // monoRight->setResolution(dai::MonoCameraProperties::SensorResolution::THE_480_P);
-    monoRight->setResolution(dai::MonoCameraProperties::SensorResolution::THE_400_P);
+    monoRight->setResolution(dai::MonoCameraProperties::SensorResolution::THE_720_P);
+    // monoRight->setResolution(dai::MonoCameraProperties::SensorResolution::THE_400_P);
     monoRight->setBoardSocket(dai::CameraBoardSocket::RIGHT);
     monoRight->setFps(fps_stereo_depth);
 
@@ -355,24 +355,24 @@ void oakd_ros_class::main_initialize(){
     // stereodepth->setRectifyEdgeFillColor(0); // black, to better see the cutout
     stereodepth->setExtendedDisparity(false);
     stereodepth->setSubpixel(true);
-    dai::RawStereoDepthConfig depth_config = stereodepth->initialConfig.get();
-    if (use_spatialFilter){
-      depth_config.postProcessing.spatialFilter.enable = true;
-      depth_config.postProcessing.spatialFilter.holeFillingRadius = spatialFilter_holefilling_radius;
-      depth_config.postProcessing.spatialFilter.numIterations = spatialFilter_iteration_num;
-      depth_config.postProcessing.spatialFilter.alpha = spatialFilter_alpha;
-    }
-    if (use_temporalFilter){
-      depth_config.postProcessing.temporalFilter.enable = true;
-      depth_config.postProcessing.temporalFilter.alpha = temporalFilter_alpha;
-      depth_config.postProcessing.temporalFilter.persistencyMode = dai::RawStereoDepthConfig::PostProcessing::TemporalFilter::PersistencyMode::VALID_2_IN_LAST_4;
-      // depth_config.postProcessing.temporalFilter.persistencyMode = dai::RawStereoDepthConfig::PostProcessing::TemporalFilter::PersistencyMode::VALID_8_OUT_OF_8;
-    }
-    if (use_speckleFilter){
-      depth_config.postProcessing.speckleFilter.enable = true;
-      depth_config.postProcessing.speckleFilter.speckleRange = speckleFilter_range;
-    }
-    stereodepth->initialConfig.set(depth_config);
+    // dai::RawStereoDepthConfig depth_config = stereodepth->initialConfig.get();
+    // if (use_spatialFilter){
+    //   depth_config.postProcessing.spatialFilter.enable = true;
+    //   depth_config.postProcessing.spatialFilter.holeFillingRadius = spatialFilter_holefilling_radius;
+    //   depth_config.postProcessing.spatialFilter.numIterations = spatialFilter_iteration_num;
+    //   depth_config.postProcessing.spatialFilter.alpha = spatialFilter_alpha;
+    // }
+    // if (use_temporalFilter){
+    //   depth_config.postProcessing.temporalFilter.enable = true;
+    //   depth_config.postProcessing.temporalFilter.alpha = temporalFilter_alpha;
+    //   depth_config.postProcessing.temporalFilter.persistencyMode = dai::RawStereoDepthConfig::PostProcessing::TemporalFilter::PersistencyMode::VALID_2_IN_LAST_4;
+    //   // depth_config.postProcessing.temporalFilter.persistencyMode = dai::RawStereoDepthConfig::PostProcessing::TemporalFilter::PersistencyMode::VALID_8_OUT_OF_8;
+    // }
+    // if (use_speckleFilter){
+    //   depth_config.postProcessing.speckleFilter.enable = true;
+    //   depth_config.postProcessing.speckleFilter.speckleRange = speckleFilter_range;
+    // }
+    // stereodepth->initialConfig.set(depth_config);
 
     monoLeft->out.link(stereodepth->left);
     monoRight->out.link(stereodepth->right);
