@@ -17,9 +17,9 @@ int main(int argc, char **argv)
   cv::Mat FrameLeft, FrameRight, FrameDepth, FrameDepthColor, FrameRgb, FrameDetect;
   auto color = cv::Scalar(0, 255, 0);
 
-  /// for point cloud
-  dai::CalibrationHandler calibData = device.readCalibration();
-  oak_handler.intrinsics=calibData.getCameraIntrinsics(dai::CameraBoardSocket::RIGHT, oak_handler.depth_width, oak_handler.depth_height);
+  /// for point cloud and CameraInfo
+  dai::CalibrationHandler calibHandler = device.readCalibration();
+  oak_handler.intrinsics=calibHandler.getCameraIntrinsics(dai::CameraBoardSocket::RIGHT, oak_handler.depth_width, oak_handler.depth_height);
 
   double fx = oak_handler.intrinsics[0][0]; double cx = oak_handler.intrinsics[0][2];
   double fy = oak_handler.intrinsics[1][1]; double cy = oak_handler.intrinsics[1][2];
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
             const dai::IMUPacket imuPackets = inPassIMU->packets[i];
             const dai::IMUReportAccelerometer accelVal = imuPackets.acceleroMeter;
             const dai::IMUReportGyroscope gyro_val = imuPackets.gyroscope;
-            const dai::IMUReportRotationVectorWAcc rotation_val = imuPackets.rotationVector;
+            // const dai::IMUReportRotationVectorWAcc rotation_val = imuPackets.rotationVector;
 
             const auto acceleroTs = accelVal.timestamp.get();
             const auto gyroTs = gyro_val.timestamp.get();
@@ -66,8 +66,8 @@ int main(int argc, char **argv)
           
             imu_msg.angular_velocity.x = gyro_val.x; imu_msg.angular_velocity.y = gyro_val.y; imu_msg.angular_velocity.z = gyro_val.z;
 
-            imu_msg.orientation.x = rotation_val.i; imu_msg.orientation.y = rotation_val.j;
-            imu_msg.orientation.z = rotation_val.k; imu_msg.orientation.w = rotation_val.real;
+            // imu_msg.orientation.x = rotation_val.i; imu_msg.orientation.y = rotation_val.j;
+            // imu_msg.orientation.z = rotation_val.k; imu_msg.orientation.w = rotation_val.real;
 
             oak_handler.imu_pub.publish(imu_msg);
           }
@@ -191,15 +191,14 @@ int main(int argc, char **argv)
 
           // CameraInfo
           const auto cameraId = dai::CameraBoardSocket::LEFT;
-          dai::CalibrationHandler calibHandler;
           std::vector<std::vector<float>> camIntrinsics, rectifiedRotation;
           std::vector<float> distCoeffs;
           std::vector<double> flatIntrinsics, distCoeffsDouble;
-          int defWidth, defHeight;
-          std::tie(std::ignore, defWidth, defHeight) = calibHandler.getDefaultIntrinsics(cameraId);
 
-          oak_handler.l_info.width = static_cast<uint32_t>(defWidth);
-          oak_handler.l_info.height = static_cast<uint32_t>(defHeight);
+          // oak_handler.l_info.width = static_cast<uint32_t>(defWidth);
+          // oak_handler.l_info.height = static_cast<uint32_t>(defHeight);
+          oak_handler.l_info.width = 1280;
+          oak_handler.l_info.height = 720;
 
           camIntrinsics = calibHandler.getCameraIntrinsics(cameraId, oak_handler.l_info.width, oak_handler.l_info.height);
 
@@ -277,15 +276,14 @@ int main(int argc, char **argv)
 
           // CameraInfo
           const auto cameraId = dai::CameraBoardSocket::RIGHT;
-          dai::CalibrationHandler calibHandler;
           std::vector<std::vector<float>> camIntrinsics, rectifiedRotation;
           std::vector<float> distCoeffs;
           std::vector<double> flatIntrinsics, distCoeffsDouble;
-          int defWidth, defHeight;
-          std::tie(std::ignore, defWidth, defHeight) = calibHandler.getDefaultIntrinsics(cameraId);
 
-          oak_handler.r_info.width = static_cast<uint32_t>(defWidth);
-          oak_handler.r_info.height = static_cast<uint32_t>(defHeight);
+          // oak_handler.r_info.width = static_cast<uint32_t>(defWidth);
+          // oak_handler.r_info.height = static_cast<uint32_t>(defHeight);
+          oak_handler.r_info.width = 1280;
+          oak_handler.r_info.height = 720;
 
           camIntrinsics = calibHandler.getCameraIntrinsics(cameraId, oak_handler.r_info.width, oak_handler.r_info.height);
 

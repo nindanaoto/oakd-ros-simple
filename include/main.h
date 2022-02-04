@@ -169,7 +169,8 @@ void oakd_ros_class::main_initialize(){
     std::shared_ptr<dai::node::XLinkOut> xoutIMU = pipeline.create<dai::node::XLinkOut>();
     xoutIMU->setStreamName("imu");
 
-    IMU_node->enableIMUSensor({dai::IMUSensor::ACCELEROMETER, dai::IMUSensor::GYROSCOPE_CALIBRATED, dai::IMUSensor::ROTATION_VECTOR}, fps_IMU);
+    // IMU_node->enableIMUSensor({dai::IMUSensor::ACCELEROMETER_RAW, dai::IMUSensor::GYROSCOPE_RAW, dai::IMUSensor::ROTATION_VECTOR}, fps_IMU);
+    IMU_node->enableIMUSensor({dai::IMUSensor::ACCELEROMETER_RAW, dai::IMUSensor::GYROSCOPE_RAW}, fps_IMU);
     IMU_node->setBatchReportThreshold(1);
     IMU_node->setMaxBatchReports(28);
     IMU_node->out.link(xoutIMU->input);
@@ -263,6 +264,7 @@ void oakd_ros_class::main_initialize(){
   }
 
   if(get_stereo_ir){
+
     std::shared_ptr<dai::node::MonoCamera> monoLeft     = pipeline.create<dai::node::MonoCamera>();
     std::shared_ptr<dai::node::MonoCamera> monoRight    = pipeline.create<dai::node::MonoCamera>();
     std::shared_ptr<dai::node::XLinkOut> xoutLeft       = pipeline.create<dai::node::XLinkOut>();
