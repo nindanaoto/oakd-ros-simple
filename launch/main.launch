@@ -3,8 +3,8 @@
 
   <param name="/topic_prefix" value="/oakd"/> 
   <param name="/fps_rgb_yolo" value="30.0"/> <!-- data rate -->
-  <param name="/fps_stereo_depth" value="30.0"/> <!-- data rate -->
-  <param name="/fps_IMU" value="500"/> <!-- data rate, integer -->
+  <param name="/fps_stereo_depth" value="60.0"/> <!-- data rate -->
+  <param name="/fps_IMU" value="400"/> <!-- data rate, integer -->
 
   <!-- image type - getting raw and compressed both is possible -->
   <param name="/get_raw" value="true"/> 

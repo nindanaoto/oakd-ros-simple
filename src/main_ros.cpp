@@ -190,6 +190,8 @@ int main(int argc, char **argv)
           }
 
           // CameraInfo
+	        oak_handler.l_info.header = header;
+
           const auto cameraId = dai::CameraBoardSocket::LEFT;
           std::vector<std::vector<float>> camIntrinsics, rectifiedRotation;
           std::vector<float> distCoeffs;
@@ -214,10 +216,11 @@ int main(int argc, char **argv)
 
           std::copy(flatIntrinsics.begin(), flatIntrinsics.end(), intrinsics.begin());
 
+          distortions.resize(8);
           distCoeffs = calibHandler.getDistortionCoefficients(cameraId);
 
           for(size_t i = 0; i < 8; i++) {
-              distortions.push_back(static_cast<double>(distCoeffs[i]));
+              distortions[i] = static_cast<double>(distCoeffs[i]);
           }
 
           // Setting Projection matrix if the cameras are stereo pair. Right as the first and left as the second.
@@ -275,6 +278,8 @@ int main(int argc, char **argv)
           }
 
           // CameraInfo
+	        oak_handler.r_info.header = header;
+
           const auto cameraId = dai::CameraBoardSocket::RIGHT;
           std::vector<std::vector<float>> camIntrinsics, rectifiedRotation;
           std::vector<float> distCoeffs;
@@ -299,10 +304,11 @@ int main(int argc, char **argv)
 
           std::copy(flatIntrinsics.begin(), flatIntrinsics.end(), intrinsics.begin());
 
+          distortions.resize(8);
           distCoeffs = calibHandler.getDistortionCoefficients(cameraId);
 
           for(size_t i = 0; i < 8; i++) {
-              distortions.push_back(static_cast<double>(distCoeffs[i]));
+              distortions[i] = static_cast<double>(distCoeffs[i]);;
           }
 
           // Setting Projection matrix if the cameras are stereo pair. Right as the first and left as the second.

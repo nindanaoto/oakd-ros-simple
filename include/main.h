@@ -135,8 +135,8 @@ class oakd_ros_class{
           l_comp_pub = nh.advertise<sensor_msgs::CompressedImage>(topic_prefix+"/stereo_ir/left/image_raw/compressed", 10);
           r_comp_pub = nh.advertise<sensor_msgs::CompressedImage>(topic_prefix+"/stereo_ir/right/image_raw/compressed", 10);
         }
-        l_info_pub = nh.advertise<sensor_msgs::CameraInfo>(topic_prefix+"/stereo_ir/left/camerainfo", 10);
-        r_info_pub = nh.advertise<sensor_msgs::CameraInfo>(topic_prefix+"/stereo_ir/right/camearinfo", 10);
+        l_info_pub = nh.advertise<sensor_msgs::CameraInfo>(topic_prefix+"/stereo_ir/left/camera_info", 10);
+        r_info_pub = nh.advertise<sensor_msgs::CameraInfo>(topic_prefix+"/stereo_ir/right/camera_info", 10);
       }
       if (get_stereo_depth)
         d_pub = nh.advertise<sensor_msgs::Image>(topic_prefix+"/depth/image_raw", 10);
@@ -170,7 +170,7 @@ void oakd_ros_class::main_initialize(){
     xoutIMU->setStreamName("imu");
 
     // IMU_node->enableIMUSensor({dai::IMUSensor::ACCELEROMETER_RAW, dai::IMUSensor::GYROSCOPE_RAW, dai::IMUSensor::ROTATION_VECTOR}, fps_IMU);
-    IMU_node->enableIMUSensor({dai::IMUSensor::ACCELEROMETER_RAW, dai::IMUSensor::GYROSCOPE_RAW}, fps_IMU);
+    IMU_node->enableIMUSensor({dai::IMUSensor::ACCELEROMETER_RAW, dai::IMUSensor::GYROSCOPE_CALIBRATED}, fps_IMU);
     IMU_node->setBatchReportThreshold(1);
     IMU_node->setMaxBatchReports(28);
     IMU_node->out.link(xoutIMU->input);
