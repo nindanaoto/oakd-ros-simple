@@ -199,8 +199,10 @@ int main(int argc, char **argv)
 
           // oak_handler.l_info.width = static_cast<uint32_t>(defWidth);
           // oak_handler.l_info.height = static_cast<uint32_t>(defHeight);
-          oak_handler.l_info.width = 1280;
-          oak_handler.l_info.height = 720;
+          //oak_handler.l_info.width = 1280;
+          //oak_handler.l_info.height = 720;
+          oak_handler.l_info.width = 640;
+          oak_handler.l_info.height = 400;
 
           camIntrinsics = calibHandler.getCameraIntrinsics(cameraId, oak_handler.l_info.width, oak_handler.l_info.height);
 
@@ -287,8 +289,10 @@ int main(int argc, char **argv)
 
           // oak_handler.r_info.width = static_cast<uint32_t>(defWidth);
           // oak_handler.r_info.height = static_cast<uint32_t>(defHeight);
-          oak_handler.r_info.width = 1280;
-          oak_handler.r_info.height = 720;
+          //oak_handler.r_info.width = 1280;
+          //oak_handler.r_info.height = 720;
+          oak_handler.r_info.width = 640;
+          oak_handler.r_info.height = 400;
 
           camIntrinsics = calibHandler.getCameraIntrinsics(cameraId, oak_handler.r_info.width, oak_handler.r_info.height);
 
